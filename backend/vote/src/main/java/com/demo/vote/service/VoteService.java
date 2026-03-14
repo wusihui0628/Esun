@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class VoteService {
-git remote add origin https://github.com/xxx/repo.git
     private final VoteRepository voteRepository;
 
     public VoteService(VoteRepository voteRepository) {
