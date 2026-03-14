@@ -1,0 +1,3 @@
+DECLARE @ITEM VARCHAR(255);
+SET @ITEM = 'Item1';
+INSERT INTO Votes (ItemId,Items,Votes) VALUES (1,@ITEM,0);

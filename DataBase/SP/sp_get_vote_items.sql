@@ -1,0 +1,5 @@
+CREATE PROCEDURE sp_get_vote_items
+AS
+BEGIN
+    SELECT * FROM Votes ORDER BY ItemId;
+END
