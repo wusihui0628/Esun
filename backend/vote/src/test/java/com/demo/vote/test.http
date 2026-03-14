@@ -1,0 +1,11 @@
+### Get vote items
+GET http://localhost:8080/api/vote-items
+
+### Create vote item
+POST http://localhost:8080/api/vote-items
+Content-Type: application/json
+
+{
+  "itemId": 10,
+  "items": "TestItem"
+}

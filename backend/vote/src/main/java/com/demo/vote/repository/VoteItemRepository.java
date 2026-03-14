@@ -1,10 +1,10 @@
 package com.demo.vote.repository;
 
-import com.demo.vote.presentation.response.VoteItemResponse;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public class VoteItemRepository {
@@ -15,15 +15,49 @@ public class VoteItemRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<VoteItemResponse> getVoteItems() {
-        String sql = "EXEC sp_get_vote_items";
+    public List<Map<String, Object>> findAll() {
+        String sql = """
+                SELECT
+                    ItemId,
+                    Items,
+                    Votes
+                FROM Votes
+                ORDER BY ItemId
+                """;
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            VoteItemResponse item = new VoteItemResponse();
-            item.setitemId(rs.getLong("ItemId"));
-            item.setitemName(rs.getString("Items"));
-            item.setVoteCnt(rs.getInt("Votes"));
-            return item;
-        });
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    public int create(String items) {
+        String sql = """
+                INSERT INTO Votes (ItemId, Items, Votes)
+                VALUES (
+                    (SELECT COALESCE(MAX(ItemId), 0) + 1 FROM Votes),
+                    ?,
+                    0
+                )
+                """;
+
+        return jdbcTemplate.update(sql, items);
+    }
+
+    public int deleteById(Integer itemId) {
+        String sql = """
+                DELETE FROM Votes
+                WHERE ItemId = ?
+                """;
+
+        return jdbcTemplate.update(sql, itemId);
+    }
+
+    public boolean existsById(Integer itemId) {
+        String sql = """
+                SELECT COUNT(1)
+                FROM Votes
+                WHERE ItemId = ?
+                """;
+
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, itemId);
+        return count != null && count > 0;
     }
 }

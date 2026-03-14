@@ -1,12 +1,18 @@
 package com.demo.vote.presentation.controller;
 
-import com.demo.vote.presentation.request.SubmitVoteRequest;
-import com.demo.vote.presentation.response.SubmitVoteResponse;
+import java.util.Map;
+
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.demo.vote.service.VoteService;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/votes")
+@CrossOrigin
 public class VoteController {
 
     private final VoteService voteService;
@@ -15,8 +21,8 @@ public class VoteController {
         this.voteService = voteService;
     }
 
-    @PostMapping("/api/voters")
-    public SubmitVoteResponse submitVote(@RequestBody SubmitVoteRequest request) {
-        return voteService.submitVote(request);
+    @PostMapping("/cast")
+    public Map<String, Object> castVote(@RequestBody Map<String, Object> request) {
+        return voteService.castVote(request);
     }
 }
