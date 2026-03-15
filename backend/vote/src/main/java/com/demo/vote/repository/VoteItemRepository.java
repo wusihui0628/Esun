@@ -41,15 +41,6 @@ public class VoteItemRepository {
         return jdbcTemplate.update(sql, items);
     }
 
-    public int deleteById(Integer itemId) {
-        String sql = """
-                DELETE FROM Votes
-                WHERE ItemId = ?
-                """;
-
-        return jdbcTemplate.update(sql, itemId);
-    }
-
     public boolean existsById(Integer itemId) {
         String sql = """
                 SELECT COUNT(1)
@@ -59,5 +50,23 @@ public class VoteItemRepository {
 
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, itemId);
         return count != null && count > 0;
+    }
+
+    public int deleteVoterRecordsByVoteItemId(Integer itemId) {
+        String sql = """
+                DELETE FROM Voters
+                WHERE VoteItemId = ?
+                """;
+
+        return jdbcTemplate.update(sql, itemId);
+    }
+
+    public int deleteVoteItemById(Integer itemId) {
+        String sql = """
+                DELETE FROM Votes
+                WHERE ItemId = ?
+                """;
+
+        return jdbcTemplate.update(sql, itemId);
     }
 }

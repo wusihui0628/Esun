@@ -54,10 +54,12 @@ public class VoteItemService {
             return result;
         }
 
-        int rows = voteItemRepository.deleteById(itemId);
+        voteItemRepository.deleteVoterRecordsByVoteItemId(itemId);
+        int deleteVoteItemRows = voteItemRepository.deleteVoteItemById(itemId);
 
-        result.put("success", rows > 0);
-        result.put("message", rows > 0 ? "刪除成功" : "刪除失敗");
+        result.put("success", deleteVoteItemRows > 0);
+        result.put("message", deleteVoteItemRows > 0 ? "刪除成功（含投票紀錄）" : "刪除失敗");
+
         return result;
     }
 }

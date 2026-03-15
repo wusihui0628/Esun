@@ -1,9 +1,13 @@
 package com.demo.vote.service;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.demo.vote.repository.VoteRepository;
 
@@ -16,11 +20,15 @@ public class VoteService {
         this.voteRepository = voteRepository;
     }
 
+    @Transactional
     public Map<String, Object> castVote(Map<String, Object> request) {
         Map<String, Object> result = new HashMap<>();
 
-        String userName = request.get("userName") == null ? "" : request.get("userName").toString().trim();
-        Object voteItemIdObj = request.get("voteItemId");
+        String userName = request.get("userName") == null
+                ? ""
+                : request.get("userName").toString().trim();
+
+        Object voteItemIdsObj = request.get("voteItemIds");
 
         if (userName.isEmpty()) {
             result.put("success", false);
@@ -28,17 +36,9 @@ public class VoteService {
             return result;
         }
 
-        if (voteItemIdObj == null || voteItemIdObj.toString().trim().isEmpty()) {
+        if (!(voteItemIdsObj instanceof List<?> rawList) || rawList.isEmpty()) {
             result.put("success", false);
-            result.put("message", "請選擇投票項目");
-            return result;
-        }
-
-        Integer voteItemId = Integer.valueOf(voteItemIdObj.toString());
-
-        if (!voteRepository.existsVoteItem(voteItemId)) {
-            result.put("success", false);
-            result.put("message", "投票項目不存在");
+            result.put("message", "請至少選擇一個投票項目");
             return result;
         }
 
@@ -48,16 +48,53 @@ public class VoteService {
             return result;
         }
 
-        Map<String, Object> voteItem = voteRepository.findVoteItemById(voteItemId);
-        String voteItemName = voteItem.get("Items").toString();
+        // 去重複，避免同一請求內選到重複項目
+        Set<Integer> voteItemIds = new LinkedHashSet<>();
+        try {
+            for (Object obj : rawList) {
+                if (obj != null && !obj.toString().trim().isEmpty()) {
+                    voteItemIds.add(Integer.valueOf(obj.toString()));
+                }
+            }
+        } catch (NumberFormatException e) {
+            result.put("success", false);
+            result.put("message", "投票項目格式錯誤");
+            return result;
+        }
+
+        if (voteItemIds.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "請至少選擇一個投票項目");
+            return result;
+        }
+
+        // 先驗證所有選項都存在
+        for (Integer voteItemId : voteItemIds) {
+            if (!voteRepository.existsVoteItem(voteItemId)) {
+                result.put("success", false);
+                result.put("message", "投票項目不存在，ItemId：" + voteItemId);
+                return result;
+            }
+        }
 
         Integer personId = voteRepository.getNextPersonId();
 
-        int insertRows = voteRepository.insertVoter(personId, userName, voteItemId, voteItemName);
-        int updateRows = voteRepository.increaseVoteCount(voteItemId);
+        int insertCount = 0;
+        int updateCount = 0;
 
-        result.put("success", insertRows > 0 && updateRows > 0);
-        result.put("message", insertRows > 0 && updateRows > 0 ? "投票成功" : "投票失敗");
+        for (Integer voteItemId : voteItemIds) {
+            Map<String, Object> voteItem = voteRepository.findVoteItemById(voteItemId);
+            String voteItemName = voteItem.get("Items").toString();
+
+            insertCount += voteRepository.insertVoter(personId, userName, voteItemId, voteItemName);
+            updateCount += voteRepository.increaseVoteCount(voteItemId);
+        }
+
+        boolean success = insertCount == voteItemIds.size() && updateCount == voteItemIds.size();
+
+        result.put("success", success);
+        result.put("message", success ? "投票成功" : "投票失敗");
+        result.put("selectedCount", voteItemIds.size());
 
         return result;
     }
